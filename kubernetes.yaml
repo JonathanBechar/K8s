@@ -1,3 +1,282 @@
 # 1. 
 apiVersion: v1
 kind: Pod
+metadata:
+  name: nginx-pod-yonatan
+spec:
+  containers:
+    - name: nginx
+      image: nginx:alpine
+
+---
+
+# 2. 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: messaging
+  labels: 
+    tier: msg
+spec:
+  containers:
+    - name: redis
+      image: redis:alpine
+      ports:
+      - containerPort: 80
+
+---
+
+# 3. 
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apx-x998-yonatan
+  
+# 4. kubectl get nodes -o json > /tmp/nodes-yonatan
+
+---
+
+# 5. kubectl expose pod messaging --name=messaging-service --type=ClusterIP --port=6379 --target-port=80
+
+---
+
+# 6. 
+apiVersion: v1
+kind: Service
+metadata:
+  name: messaging-service
+spec:
+  type: ClusterIP
+  selector:
+    tier: msg
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 80
+
+---
+
+# 7. 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hr-web-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hr-webapp
+  template:
+    metadata:
+      labels:
+        app: hr-webapp
+    spec:
+      containers:
+      - name: kodekloud
+        image: kodekloud/webapp-color
+
+---
+
+# 8.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: static-busybox
+spec:
+  tolerations:
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"
+  containers:
+    - name: busybox
+      image: busybox:latest
+      command: ["sleep", "1000"]
+
+---
+
+# 9.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: finance-yonatan
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: temp-bus
+  namespace: finance-yonatan
+spec:
+  containers:
+    - name: redis
+      image: redis:alpine
+      ports:
+      - containerPort: 80
+
+---
+
+# 10.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-analytics
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 100Mi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/pv/data-analytics"
+
+---
+
+# 11. 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: redis-storage-yonatan
+spec:
+  containers:
+  - name: redis
+    image: redis:alpine
+    volumeMounts:
+    - name: redis-volume
+      mountPath: /data/redis
+  volumes:
+  - name: redis-volume
+    emptyDir: {}
+
+---
+
+# 12. 
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pv-claim
+spec:
+  volumeName: pv-1
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: use-pvspec-yonatan
+  labels:
+    run: use-pv
+spec:
+  containers:
+  - name: use-pv
+    image: nginx
+    volumeMounts:
+    - name: pv-storage
+      mountPath: /data
+  volumes:
+  - name: pv-storage
+    persistentVolumeClaim:
+      claimName: pv-claim
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+
+---
+
+# 13. 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-nginx
+  template:
+    metadata:
+      labels:
+        app: app-nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.16
+
+# kubectl set image deployment/nginx-deploy nginx=nginx:1.17
+# kubectl rollout status deployment/nginx-deploy
+
+---
+
+# 14. 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-resolver
+spec:
+  containers:
+    - name: nginx
+      image: nginx:latest
+---
+# kubectl expose pod nginx-resolver --name=nginx-resolver-service --port=80 --target-port=80
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dns-testing
+spec:
+  containers:
+    - name: busybox
+      image: busybox:1.28
+---
+# kubectl exec -it dns-testing -- nslookup nginx-resolver-service
+
+---
+
+# 15. 
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-critical
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: critical
+  template:
+    metadata:
+      labels:
+        tier: critical
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - node01
+      containers:
+      - name: nginx
+        image: nginx:latest
+
+---
+
+# 16.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-pod
+spec:
+  containers:
+    - name: alpha
+      image: nginx:latest
+      env:
+      - name: alpha
+        value: "alpha"
+    - name: beta
+      image: busybox:latest
+      command: ["sleep", "4800"]
+      env:
+      - name: beta
+        value: "beta"

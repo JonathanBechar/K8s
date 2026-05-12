@@ -1,0 +1,124 @@
+# 1. kubectl create deploy webapp --image=nginx --dry-run -o yaml > webapp.yaml 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: webapp
+  name: webapp
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: webapp
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+      - image: nginx
+        name: nginx
+        resources: {}
+status: {}
+
+---
+# 2. kubectl rollout status deployment/webapp
+---
+# 3. kubectl get rs --selector=app=webapp
+---
+# 4. kubectl get rs webapp-645b5b46cd -o yaml > rs.yaml
+#    kubectl get pods -l app=webapp -o yaml > pods.yaml
+---
+# 5. kubectl delete -f deployment.yaml | kubectl get pods
+---
+# 6. kubectl create deploy webapp --image=nginx:1.17.1 --dry-run -o yaml > webapp.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: webapp
+  name: webapp-2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webapp
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+      - image: nginx:1.17.1
+        name: nginx
+        ports:
+        - containerPort: 80
+        resources: {}
+status: {}
+
+# kubectl apply -f deployment.yaml
+# kubectl describe pod webapp-2 | grep "Image:"
+---
+# 7. kubectl set image deployment/webapp-2 nginx=nginx:1.17.4
+#    kubectl describe pod webapp-2 | grep "Image:"
+---
+# 8. kubectl rollout history deployment/webapp-2
+#    kubectl rollout status deployment/webapp-2
+---
+# 9. kubectl set image deployment/webapp-2 nginx=nginx:1.17.1
+#    kubectl describe pod webapp-2 | grep "Image:"
+---
+# 10. kubectl set image deployment/webapp-2 nginx=nginx:1.100
+#  a. kubectl get pods # ----> (webapp-2-9b697d97c-w4lmx - ImagePullBackOff)
+#  b. kubectl set image deployment/webapp-2 nginx=nginx:1.17.1 | kubectl get pods
+#  c. kubectl rollout history deployment/webapp-2 --revision=5
+#  d. kubectl rollout history deployment/webapp-2 --revision=5
+#  e. kubectl set image deployment/webapp-2 nginx=nginx:latest| kubectl describe pod webapp-2 | grep "Image:"
+---
+# 11. 
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: webapp2-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: webapp-2
+  minReplicas: 10
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 85
+
+# kubectl get hpa
+---
+# 13. kubectl delete -f deployment.yaml
+---
+# 14. kubectl create job hello-job --image=busybox --dry-run -o yaml -- echo "Hello I am from job" > hello-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hello-job
+spec:
+  completions: 10
+  parallelism: 1
+  template:
+    metadata: {}
+    spec:
+      containers:
+      - command:
+        - echo
+        - Hello I am from job
+        image: busybox
+        name: hello-job
+        resources: {}
+      restartPolicy: Never
+status: {}

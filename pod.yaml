@@ -1,0 +1,126 @@
+# 1. kubectl get pods --show-labels
+---
+# 2.
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: prod
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      env: prod
+  template:
+    metadata:
+      labels:
+        env: prod
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: dev
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      env: dev
+  template:
+    metadata:
+      labels:
+        env: dev
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+
+---
+
+# 3. kubectl get pods -o wide --show-labels
+---
+# 4. kubectl get pods -l env=dev
+---
+# 5. kubectl get pods -l env=dev --show-labels
+---
+# 6. kubectl get pods -l env=prod
+---
+# 7. kubectl get pods -l env=prod --show-labels
+---
+# 8. kubectl get pods -l env
+---
+# 9. kubectl get pods -l 'env in (prod,dev)'
+---
+# 10. kubectl get pods -l 'env in (prod,dev)' --show-labels
+---
+# 11. kubectl label pod dev-78d8l env=uat --overwrite | kubectl get pods --show-labels
+---
+# 12.
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: prod
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      tier: test
+  template:
+    metadata:
+      labels:
+        tier: test
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: dev
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      tier: test
+  template:
+    metadata:
+      labels:
+        tier: test
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+
+#kubectl get pods --show-labels
+
+---
+# 13. kubectl label pod --all app=nginx | kubectl get pods --show-labels
+---
+# 14. kubectl get nodes --show-labels
+---
+# 15. kubectl label node i-0f0e0f0a170c18ae0 nodeName=nginxnode
+---
+# 16.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    run: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+  nodeSelector:
+    nodeName: nginxnode
+
+---
+
+# 17. kubectl get pod nginx-pod -o wide
+---
+# 18. kubectl get pod nginx-pod --show-labels

@@ -1,0 +1,30 @@
+# 1. cat >> config.txt << EOF
+# key1=value1
+# key2=value2
+# EOF
+# cat config.txt
+---
+# 2. kubectl create configmap keyvalcfgmap --from-env-file=config.txt
+---
+# 3.
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: nginx
+  name: nginx
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+    envFrom:
+    - configMapRef:
+        name: keyvalcfgmap
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+status: {}
+
+# kubectl apply -f config.yaml 
+# kubectl exec -it nginx -- sh | echo $key1
+# kubectl delete -f config.yaml
